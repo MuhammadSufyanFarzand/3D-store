@@ -1,0 +1,6 @@
+{
+  "name": "AETHERIA // Interactive 3D Streetwear Archive",
+  "description": "Interactive 3D streetwear store featuring real-time WebGL catenary clothesline physics, composite 3D garments, 360-degree product inspection, and full WCAG accessibility.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

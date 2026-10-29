@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AETHERIA // Interactive 3D Streetwear Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --card-cream: #F6F2EC;
+      --accent-orange: #E85D2A;
+      --dark-ink: #181716;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #2b1d28;
+      color: #ffffff;
+    }
+
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Atmospheric Golden-Pink Sunset Sky Background */
+    .sky-viewport {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: linear-gradient(
+        180deg,
+        #7c98b3 0%,
+        #a89Fad 18%,
+        #d69f9a 40%,
+        #eb9c78 64%,
+        #f5b076 82%,
+        #d97f54 100%
+      );
+    }
+
+    /* High-res volumetric sunset cloud layers */
+    .cloud-bg-base {
+      position: absolute;
+      inset: -6%;
+      width: 112%;
+      height: 112%;
+      background-image: url('https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=2200&q=85');
+      background-size: cover;
+      background-position: center 65%;
+      filter: saturate(1.25) contrast(1.05) brightness(1.02) hue-rotate(-6deg);
+      opacity: 0.42;
+      animation: slowSkyPan 55s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes slowSkyPan {
+      0% { transform: scale(1.06) translate3d(-1.5%, 0%, 0); }
+      100% { transform: scale(1.1) translate3d(1.5%, -1.5%, 0); }
+    }
+
+    /* Custom painted procedural cloud canvas sits above base for realistic golden hour clouds */
+    #cloudCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Warm Sunset Glow Overlay */
+    .sunset-vignette {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background:
+        radial-gradient(circle at 50% 92%, rgba(255, 188, 107, 0.55) 0%, rgba(235, 122, 82, 0.25) 42%, transparent 75%),
+        linear-gradient(180deg, rgba(66, 84, 108, 0.38) 0%, rgba(190, 128, 114, 0.12) 45%, rgba(236, 143, 88, 0.35) 100%);
+      pointer-events: none;
+    }
+
+    /* 3D Stage for the Clothesline Carousel */
+    .stage-3d {
+      perspective: 1400px;
+      perspective-origin: 50% 42%;
+      transform-style: preserve-3d;
+    }
+
+    /* Individual Hanging Garment Node */
+    .garment-node {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 50% 0%; /* Pivots directly around the wire hook point! */
+      transform-style: preserve-3d;
+      will-change: transform, opacity, filter;
+      cursor: pointer;
+    }
+
+    /* Subtle edge thickness illusion when rotated sideways on the wire */
+    .garment-figure {
+      position: relative;
+      transform-style: preserve-3d;
+      transition: filter 0.35s ease;
+      filter: drop-shadow(0 28px 34px rgba(38, 16, 12, 0.38));
+    }
+
+    .garment-node:hover .garment-figure {
+      filter: drop-shadow(0 34px 44px rgba(38, 16, 12, 0.52)) brightness(1.03);
+    }
+
+    /* Glassmorphic UI Pills */
+    .glass-pill {
+      background: rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      box-shadow: 0 8px 28px rgba(35, 15, 10, 0.15);
+      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .glass-pill:hover {
+      background: rgba(255, 255, 255, 0.26);
+      border-color: rgba(255, 255, 255, 0.8);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(35, 15, 10, 0.24);
+    }
+
+    .glass-nav-arrow {
+      width: 38px;
+      height: 38px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      transition: all 0.22s ease;
+      cursor: pointer;
+    }
+
+    .glass-nav-arrow:hover {
+      background: rgba(255, 255, 255, 0.34);
+      transform: scale(1.08);
+    }
+
+    .glass-nav-arrow:active {
+      transform: scale(0.95);
+    }
+
+    /* Product Detail Cream Panel (#F6F2EC) */
+    .product-detail-card {
+      background: var(--card-cream);
+      color: var(--dark-ink);
+      box-shadow: 0 30px 70px rgba(24, 12, 8, 0.32), 0 2px 10px rgba(0,0,0,0.06);
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease;
+    }
+
+    /* Custom Scrollbar for Detail Panel & Cart */
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(120, 110, 100, 0.3);
+      border-radius: 9999px;
+    }
+
+    /* Frosted Dark Cart Drawer */
+    .cart-glass-drawer {
+      background: rgba(24, 21, 20, 0.86);
+      backdrop-filter: blur(26px) saturate(140%);
+      -webkit-backdrop-filter: blur(26px) saturate(140%);
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: -24px 0 60px rgba(0, 0, 0, 0.45);
+      transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    /* Fabric Macro Swatch Card */
+    .macro-fabric-card {
+      box-shadow: 0 32px 64px rgba(32, 14, 10, 0.42);
+      transform: rotate(-2.5deg);
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .macro-fabric-card:hover {
+      transform: rotate(0deg) scale(1.02);
+    }
+
+    /* Accordion smooth transition */
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+      opacity: 0;
+    }
+    .accordion-content.open {
+      max-height: 180px;
+      opacity: 1;
+    }
+
+    /* Subtle pulse on active size pill */
+    .size-btn {
+      position: relative;
+      z-index: 1;
+      transition: color 0.2s ease, transform 0.15s ease;
+    }
+    .size-btn.active {
+      background-color: var(--accent-orange);
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(232, 93, 42, 0.45);
+    }
+  </style>
+</head>
+<body class="relative select-none overflow-hidden">
+
+  <!-- ================= 1. DYNAMIC SUNSET CLOUDSCAPE BACKGROUND ================= -->
+  <div class="sky-viewport">
+    <div class="cloud-bg-base"></div>
+    <canvas id="cloudCanvas"></canvas>
+    <div class="sunset-vignette"></div>
+  </div>
+
+  <!-- ================= 2. TOP NAVIGATION BAR ================= -->
+  <header class="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-5 sm:px-10 py-5 pointer-events-auto">
+    <!-- Left: Hamburger + MENU -->
+    <button id="menuBtn" class="flex items-center gap-2.5 text-white/95 hover:text-white transition group py-1.5 px-2 rounded-lg">
+      <div class="flex flex-col gap-1 w-4">
+        <span class="w-full h-[1.5px] bg-white transition-transform duration-300 group-hover:translate-x-0.5"></span>
+        <span class="w-3 h-[1.5px] bg-white transition-all duration-300 group-hover:w-full"></span>
+        <span class="w-full h-[1.5px] bg-white transition-transform duration-300 group-hover:-translate-x-0.5"></span>
+      </div>
+      <span class="text-[11px] font-medium tracking-[0.18em] uppercase">Menu</span>
+    </button>
+
+    <!-- Center: Intricate Neo-Gothic / Cybersigilism Streetwear Brand Logo (Matches video) -->
+    <button id="brandLogoBtn" class="focus:outline-none group transition-transform duration-300 hover:scale-105" title="Return to Clothesline">
+      <svg class="w-24 sm:w-28 h-14 text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.22)]" viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Symmetrical Neo-Gothic Streetwear Emblem -->
+        <path d="M110 8 C105 26 95 40 78 48 C92 46 102 53 106 72 C100 58 86 54 68 62 C82 52 88 38 84 20 C76 36 60 44 40 44 C58 36 68 24 72 10 C60 24 44 31 24 28 C44 35 54 46 52 66 C43 52 30 46 14 48 C32 53 44 64 46 84 C54 69 66 64 82 70 C70 78 64 90 66 108 C76 91 90 83 105 88 L110 114 L115 88 C130 83 144 91 154 108 C156 90 150 78 138 70 C154 64 166 69 174 84 C176 64 188 53 206 48 C190 46 177 52 168 66 C166 46 176 35 196 28 C176 31 160 24 148 10 C152 24 162 36 180 44 C160 44 144 36 136 20 C132 38 138 52 152 62 C134 54 120 58 114 72 C118 53 128 46 142 48 C125 40 115 26 110 8 Z" fill="currentColor"/>
+        <!-- Inner gothic cutouts & vertical spikes -->
+        <path d="M110 24 L103 54 L110 82 L117 54 Z" fill="#b99698" fill-opacity="0.35"/>
+        <path d="M88 38 C78 48 74 62 78 78 M132 38 C142 48 146 62 142 78" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M62 34 L54 76 M158 34 L166 76" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <!-- Right: Search, Account, Bag (N), Currency -->
+    <div class="flex items-center gap-4 sm:gap-6 text-white/95 text-[11px] font-medium tracking-[0.14em] uppercase">
+      <button id="searchTrigger" class="hover:text-white transition p-1.5 rounded-full hover:bg-white/10" title="Search Archive">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path stroke-linecap="round" d="M20 20l-4.35-4.35"></path>
+        </svg>
+      </button>
+      <button id="accountTrigger" class="hidden sm:inline-flex hover:text-white transition p-1.5 rounded-full hover:bg-white/10" title="Account">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
+        </svg>
+      </button>
+      <button id="bagTriggerBtn" class="hover:text-white transition flex items-center gap-1.5 py-1 px-2.5 rounded-full hover:bg-white/15">
+        <span>BAG</span>
+        <span id="headerBagCount" class="font-mono-tech">(0)</span>
+      </button>
+      <button id="currencyBtn" class="hidden md:inline-flex items-center gap-1 text-white/80 hover:text-white transition font-mono-tech text-[11px]">
+        <span id="currencyLabel">EUR €</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= 3. MAIN INTERACTIVE VIEWPORT ================= -->
+  <main id="mainStage" class="relative z-10 w-full h-full overflow-hidden">
+
+    <!-- 3A. CURVED METALLIC CLOTHESLINE WIRE (SVG) -->
+    <div id="wireContainer" class="absolute inset-0 pointer-events-none transition-all duration-700 ease-out">
+      <svg id="clotheslineSvg" class="w-full h-full overflow-visible" preserveAspectRatio="none">
+        <defs>
+          <!-- Realistic braided steel wire gradient -->
+          <linearGradient id="steelWireGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.35)" />
+            <stop offset="18%" stop-color="rgba(235,240,245,0.85)" />
+            <stop offset="50%" stop-color="rgba(160,170,182,0.95)" />
+            <stop offset="82%" stop-color="rgba(240,244,248,0.85)" />
+            <stop offset="100%" stop-color="rgba(255,255,255,0.35)" />
+          </linearGradient>
+          <filter id="wireDropShadow" x="-10%" y="-10%" width="120%" height="140%">
+            <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#1f0d07" flood-opacity="0.32"/>
+          </filter>
+        </defs>
+        <!-- Outer subtle glow / shadow cable -->
+        <path id="wireShadowPath" d="" fill="none" stroke="rgba(30, 14, 10, 0.28)" stroke-width="4.5" />
+        <!-- Core metallic cable -->
+        <path id="wireMainPath" d="" fill="none" stroke="url(#steelWireGrad)" stroke-width="2.6" filter="url(#wireDropShadow)" />
+        <!-- Specular top highlight on the wire -->
+        <path id="wireHighlightPath" d="" fill="none" stroke="rgba(255, 255, 255, 0.7)" stroke-width="0.9" />
+      </svg>
+    </div>
+
+    <!-- 3B. 3D HANGING GARMENTS LAYER -->
+    <div id="carouselStage" class="stage-3d absolute inset-0 w-full h-full">
+      <!-- Garment nodes are dynamically mounted and animated at 60fps here -->
+    </div>
+
+    <!-- 3C. CAROUSEL LEFT / RIGHT NAVIGATION ARROWS -->
+    <div id="carouselControls" class=" transition-opacity duration-500">
+      <button id="prevGarmentBtn" aria-label="Previous Garment" class="glass-nav-arrow fixed left-4 sm:left-8 top-1/2 -translate-y-1/2 z-20">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <button id="nextGarmentBtn" aria-label="Next Garment" class="glass-nav-arrow fixed right-4 sm:right-8 top-1/2 -translate-y-1/2 z-20">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- 3D. ACTIVE GARMENT BOTTOM CAPTION & QUICK VIEW BUTTON -->
+    <div id="bottomCaptionBar" class="fixed bottom-8 sm:bottom-11 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center text-center transition-all duration-500">
+      <h1 id="activeProductTitle" class="text-white text-base sm:text-lg font-semibold tracking-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.3)] mb-3 transition-all duration-300">
+        Hail Crew Oat
+      </h1>
+      <button id="quickViewBtn" class="glass-pill rounded-full px-5 py-2 flex items-center gap-3 text-[11px] font-mono-tech uppercase tracking-[0.14em] text-white cursor-pointer">
+        <span>QUICK VIEW</span>
+        <span class="w-1 h-1 rounded-full bg-white/60"></span>
+        <span id="activeProductPrice">€95,00</span>
+      </button>
+      <div class="mt-3 flex items-center gap-2 text-[10px] text-white/60 font-mono-tech tracking-widest uppercase">
+        <span>Drag wire or use arrows</span>
+      </div>
+    </div>
+
+    <!-- ================= 4. SPLIT QUICK-VIEW / PRODUCT DETAIL OVERLAY ================= -->
+    <div id="quickViewStage" class="fixed inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-500 flex flex-col lg:flex-row items-center justify-between px-4 sm:px-10 lg:px-16 pt-16 pb-6">
+
+      <!-- Left Half: Interactive 3-Slide Product Showcase (Hanger / Lookbook Model / Fabric Macro) -->
+      <div id="qvLeftGallery" class="relative w-full lg:w-[50%] h-[46%] lg:h-full flex items-center justify-center">
+        <!-- Left Gallery Arrow -->
+        <button id="qvMediaPrev" class="glass-nav-arrow absolute left-2 sm:left-6 z-30">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+
+        <!-- Slide 1: The 3D Hanging Garment itself positions here automatically! -->
+        <!-- Slide 2: Editorial Model Lookbook View (Matches 00:09 in video) -->
+        <div id="qvLookbookSlide" class="hidden opacity-0 transition-all duration-500 relative w-[270px] sm:w-[360px] lg:w-[410px] h-[340px] sm:h-[460px] lg:h-[520px] flex items-center justify-center">
+          <div id="lookbookIllustration" class="w-full h-full flex items-center justify-center drop-shadow-[0_32px_48px_rgba(25,10,8,0.45)]"></div>
+          <div class="absolute bottom-4 left-1/2 -translate-x-1/2 glass-pill px-3.5 py-1 rounded-full text-[10px] font-mono-tech uppercase tracking-widest text-white/95">
+            Lookbook // Model is 186cm wearing Size L
+          </div>
+        </div>
+
+        <!-- Slide 3: High-Detail Macro Fabric Knit Texture Swatch (Matches 00:10 in video) -->
+        <div id="qvMacroSlide" class="hidden opacity-0 transition-all duration-500 relative flex items-center justify-center">
+          <div class="macro-fabric-card relative w-[250px] sm:w-[320px] lg:w-[350px] h-[310px] sm:h-[410px] lg:h-[450px] rounded-sm overflow-hidden border border-white/40">
+            <canvas id="macroTextureCanvas" width="500" height="640" class="w-full h-full object-cover"></canvas>
+            <div class="absolute bottom-3 right-3 bg-black/55 backdrop-blur-md text-white text-[10px] font-mono-tech uppercase tracking-wider px-2.5 py-1 rounded">
+              480GSM Heavyweight Brushed Fleece
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Gallery Arrow -->
+        <button id="qvMediaNext" class="glass-nav-arrow absolute right-2 sm:right-6 z-30">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+
+        <!-- Bottom Media Pagination Dots + View Label -->
+        <div class="absolute bottom-2 lg:bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-30">
+          <span id="qvSlideCaption" class="text-[10px] font-mono-tech uppercase tracking-[0.2em] text-white/80">01 / Hanger View</span>
+          <div class="flex items-center gap-2 bg-black/25 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
+            <button data-slide="0" class="qv-dot w-2 h-2 rounded-full bg-white transition-all"></button>
+            <button data-slide="1" class="qv-dot w-2 h-2 rounded-full bg-white/40 hover:bg-white/70 transition-all"></button>
+            <button data-slide="2" class="qv-dot w-2 h-2 rounded-full bg-white/40 hover:bg-white/70 transition-all"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Half: Cream Off-White Product Detail Card (#F6F2EC - Matches 00:06-00:14) -->
+      <div id="qvRightCardWrap" class="w-full lg:w-[46%] max-w-[520px] h-[52%] lg:h-[82%] max-h-[650px] flex items-center justify-center">
+        <div id="qvCard" class="product-detail-card relative w-full h-full rounded-xl p-6 sm:p-8 lg:p-9 overflow-y-auto custom-scroll translate-y-6 opacity-0">
+          
+          <!-- Close Button (X) -->
+          <button id="closeQuickViewBtn" class="absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-200/70 transition" title="Back to wire">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+
+          <!-- Category Breadcrumb -->
+          <div id="qvCategory" class="font-mono-tech text-[10px] tracking-[0.16em] uppercase text-stone-500 mb-1.5">
+            CREW NECKS • ALL IN
+          </div>
+
+          <!-- Product Title & Price -->
+          <h2 id="qvTitle" class="text-xl sm:text-2xl font-semibold tracking-tight text-stone-900">
+            Hail Crew Oat
+          </h2>
+          <div id="qvPrice" class="text-sm font-medium text-stone-700 mt-1 mb-5">
+            €95,00
+          </div>
+
+          <!-- Color Swatches Row -->
+          <div class="mb-5">
+            <div class="text-[11px] font-mono-tech uppercase tracking-wider text-stone-500 mb-2">
+              Color: <span id="qvSelectedColorName" class="text-stone-900 font-medium">Oat</span>
+            </div>
+            <div id="qvColorSwatches" class="flex items-center gap-2.5">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Dark Pill Size Selector Bar (#181716 with orange active circle #E85D2A - Matches 00:13) -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between text-[11px] font-mono-tech uppercase tracking-wider text-stone-500 mb-2">
+              <span>Select Size</span>
+              <button id="sizeGuideTrigger" class="underline hover:text-stone-900 transition">Size Chart</button>
+            </div>
+            <div class="bg-[#1A1918] text-stone-300 rounded-full p-1.5 flex items-center justify-between shadow-inner">
+              <button data-size="XS" class="size-btn w-9 h-8 rounded-full text-[11px] font-mono-tech font-medium flex items-center justify-center hover:text-white">XS</button>
+              <button data-size="S" class="size-btn w-9 h-8 rounded-full text-[11px] font-mono-tech font-medium flex items-center justify-center hover:text-white">S</button>
+              <button data-size="M" class="size-btn active w-9 h-8 rounded-full text-[11px] font-mono-tech font-medium flex items-center justify-center hover:text-white">M</button>
+              <button data-size="L" class="size-btn w-9 h-8 rounded-full text-[11px] font-mono-tech font-medium flex items-center justify-center hover:text-white">L</button>
+              <button data-size="XL" class="size-btn w-9 h-8 rounded-full text-[11px] font-mono-tech font-medium flex items-center justify-center hover:text-white">XL</button>
+              <button data-size="XXL" class="size-btn w-9 h-8 rounded-full text-[11px] font-mono-tech font-medium flex items-center justify-center hover:text-white">XXL</button>
+            </div>
+          </div>
+
+          <!-- Action Buttons Row: Orange ADD TO BAG (- 1 +) & Dark BUY -->
+          <div class="grid grid-cols-12 gap-2.5 mb-5">
+            <!-- Orange Add To Bag Button with integrated quantity controls -->
+            <div class="col-span-8 bg-[#E85D2A] hover:bg-[#d6501f] text-white rounded-md flex items-center justify-between px-3.5 py-2.5 transition shadow-sm">
+              <button id="addToBagMainBtn" class="text-[11px] font-mono-tech font-medium tracking-[0.12em] uppercase flex-1 text-left py-0.5">
+                ADD TO BAG
+              </button>
+              <div class="flex items-center gap-2.5 border-l border-white/25 pl-3 text-xs font-mono-tech">
+                <button id="qvQtyMinus" class="hover:opacity-75 px-1 transition" title="Decrease quantity">−</button>
+                <span id="qvQtyValue" class="w-3 text-center">1</span>
+                <button id="qvQtyPlus" class="hover:opacity-75 px-1 transition" title="Increase quantity">+</button>
+              </div>
+            </div>
+
+            <!-- Dark Buy Button -->
+            <button id="instantBuyBtn" class="col-span-4 bg-[#1A1918] hover:bg-stone-800 text-white rounded-md text-[11px] font-mono-tech font-medium tracking-[0.14em] uppercase py-2.5 transition shadow-sm">
+              BUY
+            </button>
+          </div>
+
+          <!-- FULL DETAILS Link -->
+          <div class="text-center mb-5">
+            <button id="fullDetailsScrollBtn" class="font-mono-tech text-[10px] tracking-[0.18em] uppercase text-stone-500 underline hover:text-stone-900 transition">
+              FULL DETAILS
+            </button>
+          </div>
+
+          <!-- Expandable Accordion Sections -->
+          <div id="qvAccordions" class="border-t border-stone-300/80 divide-y divide-stone-300/80 text-xs">
+            <!-- 1. Details -->
+            <div class="py-3">
+              <button class="accordion-trigger w-full flex items-center justify-between text-left font-medium text-stone-800 hover:text-black">
+                <span>Details</span>
+                <span class="acc-icon font-mono-tech text-stone-500 text-sm">+</span>
+              </button>
+              <div class="accordion-content text-stone-600 leading-relaxed pt-0">
+                <p id="qvDetailsText" class="pt-2.5 text-[12px]">
+                  Crafted from custom-milled 480GSM heavyweight organic cotton fleece. Features a boxy dropped-shoulder silhouette, double-layered 2x2 ribbed collar, and garment-washed finish for an ultra-soft vintage handfeel.
+                </p>
+              </div>
+            </div>
+
+            <!-- 2. Fabric & care -->
+            <div class="py-3">
+              <button class="accordion-trigger w-full flex items-center justify-between text-left font-medium text-stone-800 hover:text-black">
+                <span>Fabric & care</span>
+                <span class="acc-icon font-mono-tech text-stone-500 text-sm">+</span>
+              </button>
+              <div class="accordion-content text-stone-600 leading-relaxed pt-0">
+                <p class="pt-2.5 text-[12px]">
+                  100% ring-spun combed organic cotton (480 g/m²). Brushed interior fleece. Machine wash cold inside-out on gentle cycle. Lay flat to dry to preserve boxy structure.
+                </p>
+              </div>
+            </div>
+
+            <!-- 3. Size & fit -->
+            <div class="py-3">
+              <button class="accordion-trigger w-full flex items-center justify-between text-left font-medium text-stone-800 hover:text-black">
+                <span>Size & fit</span>
+                <span class="acc-icon font-mono-tech text-stone-500 text-sm">+</span>
+              </button>
+              <div class="accordion-content text-stone-600 leading-relaxed pt-0">
+                <p class="pt-2.5 text-[12px]">
+                  Relaxed, slightly cropped boxy streetwear fit with dropped shoulders. Take your true size for the signature oversized drape, or size down for a standard fit.
+                </p>
+              </div>
+            </div>
+
+            <!-- 4. Shipping & returns -->
+            <div class="py-3">
+              <button class="accordion-trigger w-full flex items-center justify-between text-left font-medium text-stone-800 hover:text-black">
+                <span>Shipping & returns</span>
+                <span class="acc-icon font-mono-tech text-stone-500 text-sm">+</span>
+              </button>
+              <div class="accordion-content text-stone-600 leading-relaxed pt-0">
+                <p class="pt-2.5 text-[12px]">
+                  Complimentary express DHL shipping on all orders over €100. Dispatched within 24 hours from our Amsterdam studio. 14-day hassle-free returns and exchanges.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ================= 5. SLIDE-OUT FROSTED DARK CART DRAWER (Matches 00:15-00:17) ================= -->
+  <div id="cartBackdrop" class="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] opacity-0 pointer-events-none transition-opacity duration-400"></div>
+
+  <aside id="cartDrawer" class="cart-glass-drawer fixed top-0 right-0 bottom-0 z-50 w-full sm:w-[410px] translate-x-full flex flex-col justify-between text-white">
+    <!-- Top Header + Free Shipping Progress Bar -->
+    <div class="p-6 pb-4 border-b border-white/10">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-medium tracking-tight">Your cart</h3>
+        <button id="closeCartBtn" class="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Free Shipping Threshold Bar (€100 threshold so €95 crew says "Add €5,00 more for Free Shipping" just like video!) -->
+      <div>
+        <p id="freeShippingText" class="text-xs text-white/85 mb-2">
+          Add <span class="font-semibold text-white">€5,00</span> more for Free Shipping
+        </p>
+        <div class="w-full h-1.5 bg-white/15 rounded-full overflow-hidden">
+          <div id="freeShippingBar" class="h-full bg-white rounded-full transition-all duration-500" style="width: 95%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scrollable Middle: Cart Items + "Recommended for you" Upsell Card -->
+    <div class="flex-1 overflow-y-auto custom-scroll p-6 space-y-6">
+      <!-- Dynamic Cart Items List -->
+      <div id="cartItemsContainer" class="space-y-5">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- Recommended For You Upsell Box (Matches 00:15-00:17 in video) -->
+      <div id="cartUpsellBox" class="pt-4 border-t border-white/10">
+        <h4 class="text-xs font-medium text-white/80 mb-3">Recommended for you</h4>
+        <div class="bg-white/[0.06] border border-white/10 rounded-lg p-3.5 flex flex-col items-center text-center">
+          <div id="upsellThumb" class="w-24 h-28 flex items-center justify-center mb-2">
+            <!-- Mini SVG black hoodie on hanger -->
+          </div>
+          <div class="w-full text-left mt-1">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-white">Hail Hood</span>
+              <span class="text-xs text-white/70 font-mono-tech">€110,00</span>
+            </div>
+            <div class="mt-2.5 flex items-center gap-2">
+              <select id="upsellSizeSelect" aria-label="Select upsell size" class="bg-black/40 border border-white/20 rounded px-2.5 py-1.5 text-[11px] text-white font-mono-tech focus:outline-none">
+                <option value="S">Size: S</option>
+                <option value="M" selected>Size: M</option>
+                <option value="L">Size: L</option>
+                <option value="XL">Size: XL</option>
+              </select>
+              <button id="addUpsellBtn" class="flex-1 bg-white/15 hover:bg-white hover:text-black text-white border border-white/25 rounded py-1.5 text-[11px] font-mono-tech uppercase tracking-wider transition">
+                Add to Bag
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cart Footer: Estimated Total + CHECK OUT button -->
+    <div class="p-6 pt-4 border-t border-white/10 bg-black/25">
+      <div class="flex items-baseline justify-between mb-1">
+        <span class="text-sm font-medium text-white/90">Estimated total</span>
+        <span id="cartSubtotalText" class="text-base font-semibold font-mono-tech">€95,00 EUR</span>
+      </div>
+      <p class="text-[11px] text-white/55 mb-4">
+        Taxes included and shipping calculated at checkout.
+      </p>
+      <button id="checkoutBtn" class="w-full bg-[#F6F2EC] hover:bg-white text-stone-950 font-mono-tech text-xs font-semibold uppercase tracking-[0.18em] py-3.5 rounded transition shadow-lg">
+        CHECK OUT
+      </button>
+    </div>
+  </aside>
+
+  <!-- ================= 6. LEFT SLIDE-OUT NAVIGATION MENU DRAWER ================= -->
+  <div id="menuBackdrop" class="fixed inset-0 z-40 bg-black/45 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300"></div>
+  <aside id="menuDrawer" class="cart-glass-drawer fixed top-0 left-0 bottom-0 z-50 w-72 sm:w-80 -translate-x-full flex flex-col justify-between p-7 text-white border-r border-white/15 border-l-0">
+    <div>
+      <div class="flex items-center justify-between mb-8">
+        <span class="font-mono-tech text-[11px] tracking-[0.2em] uppercase text-white/60">Navigation</span>
+        <button id="closeMenuBtn" class="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10">✕</button>
+      </div>
+      <nav class="space-y-4">
+        <button data-Jump="0" class="menu-jump-link block text-left text-lg font-medium hover:text-[#E85D2A] transition">01 / All Hanging Pieces</button>
+        <button data-jump="2" class="menu-jump-link block text-left text-lg font-medium hover:text-[#E85D2A] transition">02 / Hail Crew Oat</button>
+        <button data-jump="1" class="menu-jump-link block text-left text-lg font-medium hover:text-[#E85D2A] transition">03 / Field Notes Hood</button>
+        <button data-jump="0" class="menu-jump-link block text-left text-lg font-medium hover:text-[#E85D2A] transition">04 / Blaugrana Archive Kit</button>
+        <button data-jump="3" class="menu-jump-link block text-left text-lg font-medium hover:text-[#E85D2A] transition">05 / Late Bloomer Ash</button>
+        <button data-jump="4" class="menu-jump-link block text-left text-lg font-medium hover:text-[#E85D2A] transition">06 / Terra Heavy Zip</button>
+      </nav>
+    </div>
+    <div class="border-t border-white/15 pt-5 text-xs text-white/60 space-y-2 font-mono-tech">
+      <div>AUTUMN / WINTER ARCHIVE '26</div>
+      <div>PHYSICS ENGINE: ACTIVE WIRE</div>
+    </div>
+  </aside>
+
+  <!-- ================= 7. SEARCH & CHECKOUT MODAL OVERLAYS ================= -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 z-50 glass-pill px-4 py-2.5 rounded-full text-xs font-mono-tech text-white opacity-0 translate-y-3 pointer-events-none transition-all duration-300">
+    Added to bag
+  </div>
+
+  <div id="checkoutModal" class="fixed inset-0 z-50 bg-black/65 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-[#F6F2EC] text-stone-900 rounded-xl max-w-md w-full p-7 shadow-2xl relative">
+      <button id="closeCheckoutModal" class="absolute top-4 right-4 w-8 h-8 rounded-full hover:bg-stone-200 flex items-center justify-center text-stone-600">✕</button>
+      <div class="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-[#E85D2A] mb-1">Aetheria Express Checkout</div>
+      <h3 class="text-xl font-semibold mb-2">Order Summary</h3>
+      <p id="checkoutSummaryLine" class="text-xs text-stone-600 mb-5">Your curated streetwear pieces are reserved in your bag.</p>
+      <div class="space-y-3 mb-5 text-xs">
+        <input type="email" value="collector@aetheria.studio" class="w-full px-3.5 py-2.5 rounded border border-stone-300 bg-white focus:outline-none focus:border-stone-900" placeholder="Email address" />
+        <input type="text" value="Keizersgracht 482, Amsterdam" class="w-full px-3.5 py-2.5 rounded border border-stone-300 bg-white focus:outline-none focus:border-stone-900" placeholder="Shipping address" />
+      </div>
+      <button id="confirmOrderBtn" class="w-full bg-[#E85D2A] hover:bg-[#d44e1d] text-white font-mono-tech text-xs uppercase tracking-[0.16em] py-3.5 rounded transition">
+        COMPLETE ORDER
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 8. APPLICATION LOGIC & 3D CLOTHESLINE PHYSICS ================= -->
+  <script>
+    /********************************************************************
+     * 1. PRODUCT CATALOG DATA (Matches exact garments from the video)
+     ********************************************************************/
+    const PRODUCTS = [
+      {
+        id: 'terra-zip',
+        title: 'Terra Heavy Zip Hood',
+        category: 'ZIP HOODIES • ARCHIVE',
+        price: 120.00,
+        type: 'hoodie',
+        defaultColor: 0,
+        colors: [
+          { name: 'Rust Clay', primary: '#9C4A2D', secondary: '#7B351D', rib: '#863B22', inner: '#5E2614' },
+          { name: 'Washed Obsidian', primary: '#262528', secondary: '#1B1A1D', rib: '#201F22', inner: '#141315' },
+          { name: 'Sage Moss', primary: '#546352', secondary: '#3E4B3C', rib: '#485646', inner: '#2F392E' }
+        ],
+        details: '510GSM custom-dyed rust clay zip hoodie featuring antique silver two-way YKK Excella zipper, double-layered sculpted hood, and deep kangaroo pockets.'
+      },
+      {
+        id: 'blaugrana-kit',
+        title: 'Late Bloomer Kit Archive',
+        category: 'JERSEYS • LIMITED EDITION',
+        price: 85.00,
+        type: 'jersey',
+        defaultColor: 0,
+        colors: [
+          { name: 'Blaugrana Heritage', primary: '#1E3F7F', secondary: '#8E1B3A', rib: '#EAB32E', inner: '#132852' },
+          { name: 'Midnight Gold', primary: '#1E2026', secondary: '#2F323B', rib: '#D9A74A', inner: '#121317' }
+        ],
+        details: 'Breathable Jacquard knit football jersey inspired by 2009 European heritage kits. Features contrast golden yellow V-neck collar, woven crest, and oversized streetwear drape.'
+      },
+      {
+        id: 'late-bloomer-ash',
+        title: 'Late Bloomer Hood Ash',
+        category: 'HOODIES • CORE COLLECTION',
+        price: 110.00,
+        type: 'hoodie-graphic',
+        defaultColor: 0,
+        colors: [
+          { name: 'Heather Ash', primary: '#E3E1DD', secondary: '#CBC8C2', rib: '#D6D3CD', inner: '#B8B4AE' },
+          { name: 'Charcoal Slate', primary: '#37383C', secondary: '#28292C', rib: '#2F3034', inner: '#1E1F22' }
+        ],
+        details: 'Heavyweight 490GSM brushed ash heather hoodie featuring high-density puff print gothic chest sigil, drop shoulders, and ultra-cozy fleece interior.'
+      },
+      {
+        id: 'field-notes-black',
+        title: 'Field Notes Hood Washed Black',
+        category: 'HOODIES • HEAVYWEIGHT',
+        price: 115.00,
+        type: 'hoodie',
+        defaultColor: 0,
+        colors: [
+          { name: 'Washed Black', primary: '#232225', secondary: '#171618', rib: '#1D1C1F', inner: '#111012' },
+          { name: 'Bone Ecru', primary: '#E5DFD3', secondary: '#CFC7B8', rib: '#D8D1C4', inner: '#BDB4A4' },
+          { name: 'Espresso Brown', primary: '#3B2D26', secondary: '#2A1F1A', rib: '#332620', inner: '#1F1612' }
+        ],
+        details: 'Enzyme-washed 500GSM luxury pullover hoodie with subtle distress enzyme treatment along the seams. Engineered with no-drawstring minimalist double hood.'
+      },
+      {
+        id: 'hail-crew-oat',
+        title: 'Hail Crew Oat',
+        category: 'CREW NECKS • ALL IN',
+        price: 95.00,
+        type: 'crewneck',
+        defaultColor: 0,
+        colors: [
+          { name: 'Oat', primary: '#DDD3C2', secondary: '#C9BTA8', rib: '#D2C6B2', inner: '#B8AB96' },
+          { name: 'Forest Green', primary: '#254232', secondary: '#1A3024', rib: '#1F382A', inner: '#14241B' },
+          { name: 'Washed Black', primary: '#242325', secondary: '#181719', rib: '#1E1D1F', inner: '#121113' }
+        ],
+        details: 'Crafted from custom-milled 480GSM heavyweight organic cotton fleece in our signature Oat melange. Boxy dropped-shoulder silhouette with thick 2x2 ribbed collar and cuffs.'
+      },
+      {
+        id: 'archive-shell-ecru',
+        title: 'Dune Technical Track Top',
+        category: 'OUTERWEAR • ALL WEATHER',
+        price: 130.00,
+        type: 'crewneck',
+        defaultColor: 0,
+        colors: [
+          { name: 'Chalk White', primary: '#EFECE6', secondary: '#DCD7CE', rib: '#E4E0D8', inner: '#C9C3B8' },
+          { name: 'Oxide Red', primary: '#8C322B', secondary: '#6E231D', rib: '#7D2B24', inner: '#541A15' }
+        ],
+        details: 'Water-repellent crinkled Japanese nylon pullover top with concealed side zip vents and articulated sleeves.'
+      }
+    ];
+
+    /********************************************************************
+     * 2. APPLICATION STATE & PHYSICS VARIABLES
+     ********************************************************************/
+    const state = {
+      // Start on index 4 ("Hail Crew Oat") or cycle smoothly; let's start on index 2 ("Late Bloomer Hood Ash") and let user glide to "Hail Crew Oat" (index 4) or start directly on index 4!
+      // In the video 00:00 starts at index 1/2 and clicks right to index 4 (Hail Crew Oat). Let's start at index 4 ("Hail Crew Oat") so it's immediately recognizable, and all 6 are on the wire!
+      activeIndex: 4,
+      currentPos: 4.0,     // Continuous floating-point position along carousel
+      targetPos: 4.0,      // Target index position
+      velocity: 0.0,       // Carousel horizontal velocity
+      swingAngles: PRODUCTS.map(() => 0),     // Pendulum angle per garment
+      swingVelocities: PRODUCTS.map(() => 0), // Pendulum angular velocity per garment
+      isQuickView: false,
+      qvSlideIndex: 0,     // 0 = Hanger, 1 = Lookbook Model, 2 = Fabric Macro
+      selectedColorIdx: 0,
+      selectedSize: 'M',
+      selectedQty: 1,
+      currency: 'EUR',
+      cart: [
+        {
+          productId: 'hail-crew-oat',
+          title: 'Hail Crew',
+          colorName: 'Oat',
+          size: 'XL',
+          price: 95.00,
+          qty: 1,
+          primaryColor: '#DDD3C2',
+          type: 'crewneck'
+        }
+      ],
+      isDragging: false,
+      dragStartX: 0,
+      dragStartTarget: 4.0
+    };
+
+    /********************************************************************
+     * 3. REALISTIC SVG GARMENT + WOODEN HANGER GENERATOR
+     ********************************************************************/
+    function createGarmentSVG(product, colorIndex = 0) {
+      const c = product.colors[colorIndex] || product.colors[0];
+      const uid = `${product.id}-${colorIndex}`;
+
+      // Wooden Hanger + Chrome Hook (Hooks exactly at (200, 12) in a 400x480 viewBox)
+      const woodenHangerSVG = `
+        <!-- Metal Hook wrapping around the wire at y=14 -->
+        <path d="M200 44 L200 26 C200 14 214 8 214 18 C214 24 205 26 200 24" fill="none" stroke="url(#chromeHook-${uid})" stroke-width="4.2" stroke-linecap="round"/>
+        <circle cx="200" cy="14" r="3.5" fill="#d4dce3" opacity="0.85"/>
+        <!-- Sculpted Maple Wood Hanger Bar -->
+        <path d="M108 82 C135 60 172 44 200 44 C228 44 265 60 292 82 C297 86 292 95 284 91 C256 72 226 59 200 59 C174 59 144 72 116 91 C108 95 103 86 108 82 Z" fill="url(#mapleWood-${uid})" stroke="#8c5830" stroke-width="1"/>
+        <!-- Wood grain highlight -->
+        <path d="M124 76 Q200 45 276 76" fill="none" stroke="rgba(255,238,215,0.45)" stroke-width="2" stroke-linecap="round"/>
+      `;
+
+      let garmentBodySVG = '';
+
+      if (product.type === 'jersey') {
+        // Retro Striped Blaugrana Football Kit (Matches 00:00 in video!)
+        garmentBodySVG = `
+          <g filter="url(#softClothShadow-${uid})">
+            <!-- Base Torso & Sleeves -->
+            <path d="M116 74 L62 152 L102 176 L124 134 L118 378 L282 378 L276 134 L298 176 L338 152 L284 74 Q245 64 200 64 Q155 64 116 74 Z" fill="${c.primary}"/>
+            <!-- Vertical Crimson Stripes clipped to torso -->
+            <clipPath id="jerseyClip-${uid}">
+              <path d="M116 74 L62 152 L102 176 L124 134 L118 378 L282 378 L276 134 L298 176 L338 152 L284 74 Q245 64 200 64 Q155 64 116 74 Z"/>
+            </clipPath>
+            <g clip-path="url(#jerseyClip-${uid})">
+              <rect x="132" y="60" width="26" height="330" fill="${c.secondary}"/>
+              <rect x="187" y="60" width="26" height="330" fill="${c.secondary}"/>
+              <rect x="242" y="60" width="26" height="330" fill="${c.secondary}"/>
+              <path d="M70 110 L118 85 L125 145 L80 170 Z" fill="${c.secondary}"/>
+              <path d="M330 110 L282 85 L275 145 L320 170 Z" fill="${c.secondary}"/>
+              <!-- Drape fold shadows -->
+              <rect x="110" y="60" width="180" height="330" fill="url(#drapeFolds-${uid})" opacity="0.55"/>
+            </g>
+            <!-- Golden Yellow V-Neck Collar -->
+            <path d="M158 67 L200 105 L242 67 L232 64 L200 92 L168 64 Z" fill="${c.rib}"/>
+            <!-- Chest Crest & Sponsor Graphic -->
+            <circle cx="166" cy="136" r="9" fill="#EAB32E" stroke="#fff" stroke-width="1.2"/>
+            <path d="M162 136 L170 136 M166 132 L166 140" stroke="#8E1B3A" stroke-width="2"/>
+            <path d="M225 136 L240 132 L236 140 Z" fill="#EAB32E"/>
+            <rect x="158" y="176" width="84" height="17" rx="2" fill="rgba(255,255,255,0.9)"/>
+            <rect x="168" y="181" width="64" height="6" rx="1" fill="#1E3F7F"/>
+          </g>
+        `;
+      } else if (product.type === 'crewneck') {
+        // Heavyweight Boxy Crewneck Sweatshirt (Matches "Hail Crew Oat" in 00:05 - 00:21!)
+        garmentBodySVG = `
+          <g filter="url(#softClothShadow-${uid})">
+            <!-- Inside Collar Back -->
+            <ellipse cx="200" cy="74" rx="44" ry="14" fill="${c.inner}"/>
+            <!-- Woven Neck Label -->
+            <rect x="190" y="69" width="20" height="9" rx="1" fill="#F6F2EC" opacity="0.85"/>
+
+            <!-- Left Dropped-Shoulder Voluminous Sleeve -->
+            <path d="M112 78 C84 96 56 148 46 218 C38 272 44 334 52 384 L96 380 C96 325 104 258 118 196 Z" fill="url(#fabricMain-${uid})" stroke="rgba(0,0,0,0.08)" stroke-width="0.8"/>
+            <!-- Left Ribbed Cuff -->
+            <path d="M52 382 L95 378 L93 398 L55 401 Z" fill="${c.rib}" stroke="rgba(0,0,0,0.1)" stroke-width="0.7"/>
+
+            <!-- Right Dropped-Shoulder Voluminous Sleeve -->
+            <path d="M288 78 C316 96 344 148 354 218 C362 272 356 334 348 384 L304 380 C304 325 296 258 282 196 Z" fill="url(#fabricMain-${uid})" stroke="rgba(0,0,0,0.08)" stroke-width="0.8"/>
+            <!-- Right Ribbed Cuff -->
+            <path d="M348 382 L305 378 L307 398 L345 401 Z" fill="${c.rib}" stroke="rgba(0,0,0,0.1)" stroke-width="0.7"/>
+
+            <!-- Boxy Main Torso -->
+            <path d="M110 77 C140 67 170 65 200 65 C230 65 260 67 290 77 C296 155 296 275 292 372 L108 372 C104 275 104 155 110 77 Z" fill="url(#fabricMain-${uid})"/>
+
+            <!-- Realistic Hanging Vertical Fabric Folds & Highlights -->
+            <path d="M110 77 C140 67 170 65 200 65 C230 65 260 67 290 77 C296 155 296 275 292 372 L108 372 C104 275 104 155 110 77 Z" fill="url(#drapeFolds-${uid})" opacity="0.65"/>
+
+            <!-- Soft natural crease lines -->
+            <path d="M142 120 Q148 245 136 365" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="3" filter="blur(2px)"/>
+            <path d="M258 115 Q250 245 264 365" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="3.5" filter="blur(2px)"/>
+            <path d="M196 140 Q203 260 194 365" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="4" filter="blur(2px)"/>
+
+            <!-- Dropped Shoulder Seam Stitching -->
+            <path d="M112 79 L118 196 M288 79 L282 196" fill="none" stroke="rgba(0,0,0,0.13)" stroke-width="1.2" stroke-dasharray="2 1.5"/>
+
+            <!-- Thick 2x2 Ribbed Crewneck Collar + V-Stitch Gusset -->
+            <path d="M150 69 C168 95 232 95 250 69 C242 64 234 63 234 63 C220 82 180 82 166 63 C166 63 158 64 150 69 Z" fill="${c.rib}" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+            <!-- Heritage V-Notch Stitch below collar -->
+            <path d="M187 88 L200 106 L213 88" fill="none" stroke="rgba(0,0,0,0.14)" stroke-width="1.3"/>
+
+            <!-- Bottom Heavyweight Ribbed Waistband Hem -->
+            <path d="M108 368 L292 368 L289 395 L111 395 Z" fill="${c.rib}" stroke="rgba(0,0,0,0.1)" stroke-width="0.8"/>
+            <!-- Ribbing vertical texture lines -->
+            <path d="M115 369 V394 M125 369 V394 M135 369 V394 M145 369 V394 M155 369 V394 M165 369 V394 M175 369 V394 M185 369 V394 M195 369 V394 M205 369 V394 M215 369 V394 M225 369 V394 M235 369 V394 M245 369 V394 M255 369 V394 M265 369 V394 M275 369 V394 M285 369 V394" stroke="rgba(0,0,0,0.06)" stroke-width="1"/>
+          </g>
+        `;
+      } else {
+        // Heavyweight Boxy Streetwear Hoodie (Washed Black / Ash Grey / Rust Zip)
+        const hasGraphic = product.type === 'hoodie-graphic';
+        const isZip = product.id === 'terra-zip';
+        garmentBodySVG = `
+          <g filter="url(#softClothShadow-${uid})">
+            <!-- Sculpted Double-Layered Hood rising behind the hanger hook -->
+            <path d="M142 74 C132 34 162 14 200 14 C238 14 268 34 258 74 Z" fill="${c.secondary}" stroke="rgba(0,0,0,0.18)" stroke-width="1"/>
+            <!-- Inner Hood Cavity -->
+            <path d="M158 74 C154 44 174 28 200 28 C226 28 246 44 242 74 Z" fill="${c.inner}"/>
+
+            <!-- Left Voluminous Sleeve -->
+            <path d="M110 79 C82 98 54 152 44 222 C36 278 42 338 50 388 L94 384 C94 328 102 260 116 198 Z" fill="url(#fabricMain-${uid})"/>
+            <path d="M50 386 L93 382 L91 402 L53 405 Z" fill="${c.rib}"/>
+
+            <!-- Right Voluminous Sleeve -->
+            <path d="M290 79 C318 98 346 152 356 222 C364 278 358 338 350 388 L306 384 C306 328 298 260 284 198 Z" fill="url(#fabricMain-${uid})"/>
+            <path d="M350 386 L307 382 L309 402 L347 405 Z" fill="${c.rib}"/>
+
+            <!-- Boxy Hoodie Torso -->
+            <path d="M108 78 C138 68 170 66 200 66 C230 66 262 68 292 78 C298 158 298 278 294 374 L106 374 C102 278 102 158 108 78 Z" fill="url(#fabricMain-${uid})"/>
+            <path d="M108 78 C138 68 170 66 200 66 C230 66 262 68 292 78 C298 158 298 278 294 374 L106 374 C102 278 102 158 108 78 Z" fill="url(#drapeFolds-${uid})" opacity="0.68"/>
+
+            <!-- Kangaroo Pocket -->
+            <path d="M132 268 L150 268 L250 268 L268 268 L280 318 L276 368 L124 368 L120 318 Z" fill="url(#fabricMain-${uid})" stroke="rgba(0,0,0,0.18)" stroke-width="1.2"/>
+
+            ${isZip ? `
+              <!-- Metallic Center Zipper Track -->
+              <line x1="200" y1="82" x2="200" y2="396" stroke="#b8bec4" stroke-width="2.2" stroke-dasharray="2 1"/>
+            ` : ''}
+
+            ${hasGraphic ? `
+              <!-- Subtle Gothic Sigil Chest Print (Matches Late Bloomer Hood Ash at 00:01) -->
+              <path d="M200 132 C192 146 180 152 168 154 C182 158 190 168 192 182 C196 170 204 170 208 182 C210 168 218 158 232 154 C220 152 208 146 200 132 Z" fill="#3a3938" opacity="0.78"/>
+            ` : ''}
+
+            <!-- Hood Collar Overlap Flaps -->
+            <path d="M142 72 C158 96 188 102 204 94 M258 72 C242 96 212 102 196 94" fill="none" stroke="rgba(0,0,0,0.22)" stroke-width="2.2" stroke-linecap="round"/>
+
+            <!-- Bottom Ribbed Hem -->
+            <path d="M106 370 L294 370 L291 398 L109 398 Z" fill="${c.rib}"/>
+          </g>
+        `;
+      }
+
+      return `
+        <svg viewBox="0 0 400 440" class="w-full h-full overflow-visible select-none pointer-events-none">
+          <defs>
+            <linearGradient id="chromeHook-${uid}" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="50%" stop-color="#8b96a3"/>
+              <stop offset="100%" stop-color="#d4dce3"/>
+            </linearGradient>
+            <linearGradient id="mapleWood-${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#b87b48"/>
+              <stop offset="30%" stop-color="#dca26e"/>
+              <stop offset="50%" stop-color="#e8b584"/>
+              <stop offset="70%" stop-color="#cf925c"/>
+              <stop offset="100%" stop-color="#a66a38"/>
+            </linearGradient>
+            <linearGradient id="fabricMain-${uid}" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="${c.primary}"/>
+              <stop offset="65%" stop-color="${c.primary}"/>
+              <stop offset="100%" stop-color="${c.secondary}"/>
+            </linearGradient>
+            <linearGradient id="drapeFolds-${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="rgba(0,0,0,0.18)"/>
+              <stop offset="14%" stop-color="rgba(255,255,255,0.14)"/>
+              <stop offset="28%" stop-color="rgba(0,0,0,0.10)"/>
+              <stop offset="48%" stop-color="rgba(255,255,255,0.18)"/>
+              <stop offset="66%" stop-color="rgba(0,0,0,0.12)"/>
+              <stop offset="84%" stop-color="rgba(255,255,255,0.12)"/>
+              <stop offset="100%" stop-color="rgba(0,0,0,0.22)"/>
+            </linearGradient>
+            <filter id="softClothShadow-${uid}" x="-15%" y="-10%" width="130%" height="130%">
+              <feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#1a0b06" flood-opacity="0.28"/>
+            </filter>
+          </defs>
+          ${woodenHangerSVG}
+          ${garmentBodySVG}
+        </svg>
+      `;
+    }
+
+    /********************************************************************
+     * 4. LOOKBOOK MODEL ILLUSTRATION & MACRO FABRIC TEXTURE GENERATOR
+     ********************************************************************/
+    function createLookbookSVG(product, colorIndex = 0) {
+      const c = product.colors[colorIndex] || product.colors[0];
+      return `
+        <svg viewBox="0 0 400 500" class="w-full h-full overflow-visible">
+          <defs>
+            <linearGradient id="modelSweaterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="${c.primary}"/>
+              <stop offset="100%" stop-color="${c.secondary}"/>
+            </linearGradient>
+          </defs>
+          <!-- Editorial Studio Model Silhouette wearing the Selected Garment (Matches 00:09 in video) -->
+          <!-- Neck & Jawline -->
+          <path d="M174 115 L172 162 L226 162 L222 115 Z" fill="#e2b99b"/>
+          <path d="M174 128 Q198 148 223 125" fill="none" stroke="rgba(120,75,55,0.35)" stroke-width="3"/>
+          <!-- Head / Face turned slightly in golden hour light -->
+          <path d="M164 62 C164 34 232 34 234 66 C236 98 226 132 198 134 C172 132 164 98 164 62 Z" fill="#ecc4a6"/>
+          <!-- Subtle facial features in golden sunset light -->
+          <path d="M175 82 Q184 79 190 82 M208 82 Q216 79 222 82" stroke="#593e31" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M196 84 L193 102 L201 104" stroke="#c49575" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M188 115 Q198 119 208 115" stroke="#a86f58" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <!-- Textured Wavy Hair (Matches model at 00:09) -->
+          <path d="M156 76 C148 45 168 20 200 22 C232 20 250 46 242 78 C238 58 224 48 200 50 C178 48 162 58 156 76 Z" fill="#2c221e"/>
+          <path d="M158 55 Q180 38 205 46 Q228 40 240 62" fill="none" stroke="#42332d" stroke-width="6" stroke-linecap="round"/>
+
+          <!-- White Undershirt Tee Collar peeking out -->
+          <path d="M166 154 Q198 176 230 154 L236 166 Q198 190 160 166 Z" fill="#ffffff"/>
+
+          <!-- Relaxed Dropped-Shoulder Streetwear Garment on Model -->
+          <path d="M158 156 C118 164 84 188 68 242 L48 430 L102 438 L118 295 L116 465 L286 465 L284 295 L300 438 L352 430 L332 242 C316 188 282 164 242 156 C220 178 180 178 158 156 Z" fill="url(#modelSweaterGrad)"/>
+
+          <!-- Ribbed Collar & Hem on Model -->
+          <path d="M158 156 C180 178 220 178 242 156 L234 150 C216 168 184 168 166 150 Z" fill="${c.rib}"/>
+          <rect x="116" y="446" width="170" height="22" rx="3" fill="${c.rib}"/>
+
+          <!-- Editorial Golden-Hour Rim Lighting & Drape Folds -->
+          <path d="M122 225 Q138 330 126 440 M278 225 Q262 330 274 440 M185 210 Q196 340 182 440" stroke="rgba(0,0,0,0.12)" stroke-width="4" fill="none" filter="blur(2px)"/>
+          <path d="M68 242 C84 188 118 164 158 156" stroke="rgba(255,220,175,0.55)" stroke-width="3" fill="none"/>
+        </svg>
+      `;
+    }
+
+    function renderMacroFabricCanvas(product, colorIndex = 0) {
+      const canvas = document.getElementById('macroTextureCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const c = product.colors[colorIndex] || product.colors[0];
+
+      // Base fill
+      ctx.fillStyle = c.primary;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw ultra-realistic diagonal French Terry / Heavyweight Cotton Knit loops (Matches 00:10 in video!)
+      ctx.save();
+      for (let y = -20; y < canvas.height + 20; y += 6) {
+        for (let x = -20; x < canvas.width + 20; x += 5) {
+          const jitterX = (Math.sin(x * 0.7 + y * 0.3) * 1.2);
+          const jitterY = (Math.cos(y * 0.5 + x * 0.2) * 1.2);
+
+          // Subtle melange yarn variation
+          const isLight = ((x + y) % 3 === 0);
+          ctx.strokeStyle = isLight ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.13)';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(x + jitterX, y + jitterY);
+          ctx.lineTo(x + 2.5 + jitterX, y + 4 + jitterY);
+          ctx.stroke();
+        }
+      }
+
+      // Soft diagonal fabric lighting gradient across the swatch
+      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      grad.addColorStop(0, 'rgba(255, 245, 230, 0.18)');
+      grad.addColorStop(0.5, 'rgba(0, 0, 0, 0.02)');
+      grad.addColorStop(1, 'rgba(20, 10, 5, 0.22)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    /********************************************************************
+     * 5. MOUNT GARMENT NODES ON THE 3D WIRE STAGE
+     ********************************************************************/
+    const carouselStage = document.getElementById('carouselStage');
+    const garmentElements = [];
+
+    function buildGarmentNodes() {
+      carouselStage.innerHTML = '';
+      garmentElements.length = 0;
+
+      PRODUCTS.forEach((product, idx) => {
+        const node = document.createElement('div');
+        node.className = 'garment-node';
+        node.dataset.index = idx;
+
+        const figure = document.createElement('div');
+        figure.className = 'garment-figure w-[280px] sm:w-[340px] md:w-[380px] h-[310px] sm:h-[375px] md:h-[420px] -ml-[140px] sm:-ml-[170px] md:-ml-[190px] -mt-[14px]';
+        figure.innerHTML = createGarmentSVG(product, product.defaultColor);
+
+        node.appendChild(figure);
+
+        node.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (state.isQuickView) return;
+
+          if (idx === state.activeIndex && Math.abs(state.currentPos - state.targetPos) < 0.15) {
+            openQuickView();
+          } else {
+            goToGarment(idx);
+          }
+        });
+
+        carouselStage.appendChild(node);
+        garmentElements.push({ node, figure });
+      });
+
+      // Also populate the mini black hoodie in the Cart Upsell Box
+      const upsellThumb = document.getElementById('upsellThumb');
+      if (upsellThumb) {
+        upsellThumb.innerHTML = createGarmentSVG(PRODUCTS[3], 0);
+      }
+    }
+
+    /********************************************************************
+     * 6. CURVED CLOTHESLINE CATENARY MATH & 60FPS PHYSICS ENGINE
+     ********************************************************************/
+    function getWirePoint(normalizedX, width, height, extraSag = 0) {
+      // Quadratic Bezier curve across the upper-middle screen:
+      // Left anchor: (-0.05 * W, 0.21 * H)
+      // Control point (middle sag): (0.50 * W, 0.34 * H + extraSag)
+      // Right anchor: (1.05 * W, 0.21 * H)
+      const t = (normalizedX + 0.05) / 1.10; // map [-0.05, 1.05] -> [0, 1]
+      const y0 = height * 0.205;
+      const yc = height * 0.335 + extraSag;
+      const y1 = height * 0.205;
+
+      const oneMinusT = 1 - t;
+      const x = normalizedX * width;
+      const y = (oneMinusT * oneMinusT * y0) + (2 * oneMinusT * t * yc) + (t * t * y1);
+      return { x, y };
+    }
+
+    function updateClotheslineSVG(width, height, extraSag = 0) {
+      const x0 = -width * 0.05;
+      const y0 = height * 0.205;
+      const xc = width * 0.50;
+      const yc = height * 0.335 + extraSag;
+      const x1 = width * 1.05;
+      const y1 = height * 0.205;
+
+      const pathData = `M ${x0.toFixed(1)} ${y0.toFixed(1)} Q ${xc.toFixed(1)} ${yc.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+      const highlightPath = `M ${x0.toFixed(1)} ${(y0 - 1).toFixed(1)} Q ${xc.toFixed(1)} ${(yc - 1).toFixed(1)} ${x1.toFixed(1)} ${(y1 - 1).toFixed(1)}`;
+
+      document.getElementById('wireShadowPath').setAttribute('d', pathData);
+      document.getElementById('wireMainPath').setAttribute('d', pathData);
+      document.getElementById('wireHighlightPath').setAttribute('d', highlightPath);
+    }
+
+    function goToGarment(newIndex) {
+      const clamped = Math.max(0, Math.min(PRODUCTS.length - 1, newIndex));
+      const delta = clamped - state.targetPos;
+      state.targetPos = clamped;
+      state.activeIndex = clamped;
+
+      // Impart realistic pendulum swing impulse to all hanging garments when the wire moves!
+      PRODUCTS.forEach((_, i) => {
+        state.swingVelocities[i] += Math.max(-18, Math.min(18, delta * 9.5));
+      });
+
+      updateBottomCaption();
+    }
+
+    function updateBottomCaption() {
+      const p = PRODUCTS[state.activeIndex];
+      const titleEl = document.getElementById('activeProductTitle');
+      const priceEl = document.getElementById('activeProductPrice');
+
+      titleEl.style.opacity = '0';
+      titleEl.style.transform = 'translateY(5px)';
+
+      setTimeout(() => {
+        titleEl.textContent = p.title;
+        priceEl.textContent = formatPrice(p.price);
+        titleEl.style.opacity = '1';
+        titleEl.style.transform = 'translateY(0)';
+      }, 140);
+    }
+
+    function formatPrice(eurAmount) {
+      if (state.currency === 'USD') {
+        return `$${(eurAmount * 1.08).toFixed(2)}`;
+      }
+      return `€${eurAmount.toFixed(2).replace('.', ',')}`;
+    }
+
+    // Main 60FPS Animation Loop for Wire, 3D Garments, and Breeze Physics
+    let lastTime = performance.now();
+    function animateStage(now) {
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+
+      // Smooth spring interpolation for carousel position
+      const posDiff = state.targetPos - state.currentPos;
+      state.velocity = state.velocity * 0.80 + posDiff * 0.14;
+      state.currentPos += state.velocity;
+
+      // Subtle dynamic sag on the wire when garments accelerate
+      const dynamicSag = Math.min(14, Math.abs(state.velocity) * 26) + Math.sin(now * 0.0018) * 2.2;
+      updateClotheslineSVG(W, H, dynamicSag);
+
+      const spacing = W < 640 ? 0.25 : 0.185; // Normalized horizontal spacing along wire
+
+      PRODUCTS.forEach((product, i) => {
+        const { node } = garmentElements[i];
+        const offset = i - state.currentPos; // 0 = center active garment
+        const absOffset = Math.abs(offset);
+
+        // Ambient wind breeze + damped spring pendulum physics
+        const windTorque = Math.sin(now * 0.0021 + i * 1.3) * 1.4;
+        const springStiffness = -14.0 * state.swingAngles[i];
+        const damping = -4.2 * state.swingVelocities[i];
+        const accel = springStiffness + damping + windTorque * 4.5 + (state.velocity * 42);
+
+        state.swingVelocities[i] += accel * dt;
+        state.swingAngles[i] += state.swingVelocities[i] * dt;
+
+        if (state.isQuickView) {
+          // QUICK VIEW MODE: Active garment glides to the Left Gallery (Slide 0), others retract out along the wire
+          if (i === state.activeIndex) {
+            const isMobile = W < 1024;
+            const targetX = isMobile ? W * 0.50 : W * 0.265;
+            const targetY = isMobile ? H * 0.13 : H * 0.17;
+            const targetScale = isMobile ? 0.82 : 1.18;
+
+            // Only show the hanging garment on Slide 0 of Quick View
+            const showHanging = state.qvSlideIndex === 0;
+            node.style.opacity = showHanging ? '1' : '0';
+            node.style.pointerEvents = 'none';
+            node.style.zIndex = '25';
+            node.style.transform = `translate3d(${targetX.toFixed(1)}px, ${targetY.toFixed(1)}px, 0px) scale(${targetScale}) rotateY(${(Math.sin(now * 0.0015) * 3).toFixed(2)}deg) rotateZ(${(state.swingAngles[i] * 0.4).toFixed(2)}deg)`;
+          } else {
+            const normX = 0.5 + offset * spacing * 1.45;
+            const pt = getWirePoint(normX, W, H, dynamicSag);
+            node.style.opacity = '0';
+            node.style.pointerEvents = 'none';
+            node.style.transform = `translate3d(${pt.x.toFixed(1)}px, ${(pt.y - 60).toFixed(1)}px, -250px) scale(0.45) rotateY(${offset < 0 ? -75 : 75}deg)`;
+          }
+        } else {
+          // MAIN CLOTHESLINE CAROUSEL MODE (Matches 00:00 - 00:05 in video!)
+          const normX = 0.50 + offset * spacing;
+          const pt = getWirePoint(normX, W, H, dynamicSag);
+
+          // Center garment faces front (rotateY = 0deg, scale = 1.03)
+          // Side garments rotate sharply in 3D (rotateY = ±62deg to ±74deg) and scale down along the wire!
+          const sign = offset < 0 ? -1 : 1;
+          const rotY = sign * Math.min(74, Math.pow(absOffset, 0.78) * 60);
+          const scale = Math.max(0.44, 1.04 - absOffset * 0.25);
+          const zDepth = -absOffset * 95;
+          const swingZ = state.swingAngles[i] + (Math.sin(now * 0.002 + i) * 1.1);
+
+          // Hide garments too far off the edges
+          const visible = absOffset < 2.65;
+          node.style.opacity = visible ? Math.max(0, 1 - Math.max(0, absOffset - 2.1) * 1.8).toFixed(2) : '0';
+          node.style.pointerEvents = visible ? 'auto' : 'none';
+          node.style.zIndex = String(Math.round(20 - absOffset * 5));
+
+          node.style.transform = `translate3d(${pt.x.toFixed(1)}px, ${pt.y.toFixed(1)}px, ${zDepth.toFixed(1)}px) scale(${scale.toFixed(3)}) rotateY(${rotY.toFixed(2)}deg) rotateZ(${swingZ.toFixed(2)}deg)`;
+        }
+      });
+
+      requestAnimationFrame(animateStage);
+    }
+
+    /********************************************************************
+     * 7. QUICK VIEW SPLIT PANEL INTERACTIONS (Matches 00:06 - 00:14)
+     ********************************************************************/
+    function openQuickView() {
+      state.isQuickView = true;
+      state.qvSlideIndex = 0;
+      state.selectedColorIdx = PRODUCTS[state.activeIndex].defaultColor || 0;
+      state.selectedQty = 1;
+
+      const product = PRODUCTS[state.activeIndex];
+
+      // Hide clothesline wire & main carousel controls smoothly
+      document.getElementById('wireContainer').style.opacity = '0';
+      document.getElementById('wireContainer').style.transform = 'translateY(-40px)';
+      document.getElementById('carouselControls').style.opacity = '0';
+      document.getElementById('carouselControls').style.pointerEvents = 'none';
+      document.getElementById('bottomCaptionBar').style.opacity = '0';
+      document.getElementById('bottomCaptionBar').style.pointerEvents = 'none';
+
+      // Populate Quick View Card details
+      document.getElementById('qvCategory').textContent = product.category;
+      document.getElementById('qvTitle').textContent = product.title;
+      document.getElementById('qvPrice').textContent = formatPrice(product.price);
+      document.getElementById('qvQtyValue').textContent = '1';
+      document.getElementById('qvDetailsText').textContent = product.details;
+
+      renderColorSwatches(product);
+      updateQvMediaSlide(0);
+
+      // Reveal Quick View Stage & animate right cream card in
+      const qvStage = document.getElementById('quickViewStage');
+      const qvCard = document.getElementById('qvCard');
+      qvStage.classList.remove('pointer-events-none', 'opacity-0');
+      qvStage.classList.add('pointer-events-auto', 'opacity-100');
+
+      setTimeout(() => {
+        qvCard.classList.remove('translate-y-6', 'opacity-0');
+        qvCard.classList.add('translate-y-0', 'opacity-100');
+      }, 60);
+    }
+
+    function closeQuickView() {
+      state.isQuickView = false;
+      state.qvSlideIndex = 0;
+
+      const qvStage = document.getElementById('quickViewStage');
+      const qvCard = document.getElementById('qvCard');
+
+      qvCard.classList.add('translate-y-6', 'opacity-0');
+      qvCard.classList.remove('translate-y-0', 'opacity-100');
+
+      qvStage.classList.add('pointer-events-none', 'opacity-0');
+      qvStage.classList.remove('pointer-events-auto', 'opacity-100');
+
+      // Restore clothesline wire & bottom caption
+      document.getElementById('wireContainer').style.opacity = '1';
+      document.getElementById('wireContainer').style.transform = 'translateY(0)';
+      document.getElementById('carouselControls').style.opacity = '1';
+      document.getElementById('carouselControls').style.pointerEvents = 'auto';
+      document.getElementById('bottomCaptionBar').style.opacity = '1';
+      document.getElementById('bottomCaptionBar').style.pointerEvents = 'auto';
+
+      // Hide lookbook/macro slides so hanger view returns smoothly
+      document.getElementById('qvLookbookSlide').classList.add('hidden', 'opacity-0');
+      document.getElementById('qvMacroSlide').classList.add('hidden', 'opacity-0');
+    }
+
+    function renderColorSwatches(product) {
+      const container = document.getElementById('qvColorSwatches');
+      const colorNameEl = document.getElementById('qvSelectedColorName');
+      container.innerHTML = '';
+
+      colorNameEl.textContent = product.colors[state.selectedColorIdx].name;
+
+      product.colors.forEach((c, idx) => {
+        const btn = document.createElement('button');
+        const isSelected = idx === state.selectedColorIdx;
+        btn.className = `w-6 h-6 rounded-full transition transform ${isSelected ? 'ring-2 ring-offset-2 ring-stone-900 scale-105' : 'opacity-80 hover:opacity-100 hover:scale-105'} border border-black/20`;
+        btn.style.backgroundColor = c.primary;
+        btn.title = c.name;
+
+        btn.addEventListener('click', () => {
+          state.selectedColorIdx = idx;
+          product.defaultColor = idx;
+          colorNameEl.textContent = c.name;
+
+          // Update the 3D hanging garment SVG + lookbook + macro swatch live!
+          garmentElements[state.activeIndex].figure.innerHTML = createGarmentSVG(product, idx);
+          document.getElementById('lookbookIllustration').innerHTML = createLookbookSVG(product, idx);
+          renderMacroFabricCanvas(product, idx);
+          renderColorSwatches(product);
+        });
+
+        container.appendChild(btn);
+      });
+    }
+
+    function updateQvMediaSlide(slideIdx) {
+      state.qvSlideIndex = (slideIdx + 3) % 3;
+      const product = PRODUCTS[state.activeIndex];
+
+      const lookbookSlide = document.getElementById('qvLookbookSlide');
+      const macroSlide = document.getElementById('qvMacroSlide');
+      const captionEl = document.getElementById('qvSlideCaption');
+
+      // Update pagination dots
+      document.querySelectorAll('.qv-dot').forEach((dot, i) => {
+        if (i === state.qvSlideIndex) {
+          dot.className = 'qv-dot w-5 h-2 rounded-full bg-white transition-all';
+        } else {
+          dot.className = 'qv-dot w-2 h-2 rounded-full bg-white/40 hover:bg-white/70 transition-all';
+        }
+      });
+
+      if (state.qvSlideIndex === 0) {
+        captionEl.textContent = '01 / Hanger View';
+        lookbookSlide.classList.add('hidden', 'opacity-0');
+        macroSlide.classList.add('hidden', 'opacity-0');
+      } else if (state.qvSlideIndex === 1) {
+        captionEl.textContent = '02 / Lookbook Model View';
+        document.getElementById('lookbookIllustration').innerHTML = createLookbookSVG(product, state.selectedColorIdx);
+        macroSlide.classList.add('hidden', 'opacity-0');
+        lookbookSlide.classList.remove('hidden');
+        requestAnimationFrame(() => lookbookSlide.classList.remove('opacity-0'));
+      } else {
+        captionEl.textContent = '03 / 480GSM Fabric Macro';
+        renderMacroFabricCanvas(product, state.selectedColorIdx);
+        lookbookSlide.classList.add('hidden', 'opacity-0');
+        macroSlide.classList.remove('hidden');
+        requestAnimationFrame(() => macroSlide.classList.remove('opacity-0'));
+      }
+    }
+
+    /********************************************************************
+     * 8. CART DRAWER LOGIC & FREE SHIPPING PROGRESS BAR
+     ********************************************************************/
+    function openCartDrawer() {
+      renderCart();
+      const backdrop = document.getElementById('cartBackdrop');
+      const drawer = document.getElementById('cartDrawer');
+      backdrop.classList.remove('pointer-events-none', 'opacity-0');
+      backdrop.classList.add('pointer-events-auto', 'opacity-100');
+      drawer.classList.remove('translate-x-full');
+    }
+
+    function closeCartDrawer() {
+      const backdrop = document.getElementById('cartBackdrop');
+      const drawer = document.getElementById('cartDrawer');
+      backdrop.classList.add('pointer-events-none', 'opacity-0');
+      backdrop.classList.remove('pointer-events-auto', 'opacity-100');
+      drawer.classList.add('translate-x-full');
+    }
+
+    function addCurrentProductToBag() {
+      const product = PRODUCTS[state.activeIndex];
+      const colorObj = product.colors[state.selectedColorIdx];
+
+      const existing = state.cart.find(
+        item => item.productId === product.id && item.colorName === colorObj.name && item.size === state.selectedSize
+      );
+
+      if (existing) {
+        existing.qty += state.selectedQty;
+      } else {
+        state.cart.push({
+          productId: product.id,
+          title: product.title.replace(' Oat', ''),
+          colorName: colorObj.name,
+          size: state.selectedSize,
+          price: product.price,
+          qty: state.selectedQty,
+          primaryColor: colorObj.primary,
+          type: product.type
+        });
+      }
+
+      renderCart();
+      openCartDrawer();
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cartItemsContainer');
+      const headerCount = document.getElementById('headerBagCount');
+      const subtotalEl = document.getElementById('cartSubtotalText');
+      const shippingText = document.getElementById('freeShippingText');
+      const shippingBar = document.getElementById('freeShippingBar');
+
+      const totalQty = state.cart.reduce((sum, item) => sum + item.qty, 0);
+      const subtotal = state.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+      headerCount.textContent = `(${totalQty})`;
+      subtotalEl.textContent = `${formatPrice(subtotal)} ${state.currency}`;
+
+      // Free shipping threshold = €100.00 (When cart has €95 Hail Crew, it shows "Add €5,00 more for Free Shipping" matching 00:15!)
+      const freeShippingThreshold = 100.0;
+      const remaining = Math.max(0, freeShippingThreshold - subtotal);
+      const progressPct = Math.min(100, (subtotal / freeShippingThreshold) * 100);
+
+      shippingBar.style.width = `${progressPct}%`;
+      if (remaining > 0) {
+        shippingText.innerHTML = `Add <span class="font-semibold text-white">${formatPrice(remaining)}</span> more for Free Shipping`;
+        shippingBar.className = 'h-full bg-white rounded-full transition-all duration-500';
+      } else {
+        shippingText.innerHTML = `<span class="text-[#E85D2A] font-semibold">You unlocked Complimentary Express Shipping!</span>`;
+        shippingBar.className = 'h-full bg-[#E85D2A] rounded-full transition-all duration-500';
+      }
+
+      if (state.cart.length === 0) {
+        container.innerHTML = `
+          <div class="py-10 text-center text-white/50 text-xs font-mono-tech uppercase tracking-widest">
+            Your bag is currently empty
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      state.cart.forEach((item, idx) => {
+        const matchedProduct = PRODUCTS.find(p => p.id === item.productId) || PRODUCTS[4];
+        const row = document.createElement('div');
+        row.className = 'flex items-start gap-4 pb-4 border-b border-white/10';
+        row.innerHTML = `
+          <div class="w-16 h-20 rounded bg-white/10 p-1.5 flex items-center justify-center shrink-0">
+            ${createGarmentSVG(matchedProduct, 0)}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <h4 class="text-xs font-medium text-white truncate">${item.title}</h4>
+              <span class="text-xs font-mono-tech text-white shrink-0">${formatPrice(item.price * item.qty)}</span>
+            </div>
+            <div class="text-[11px] text-white/60 mt-0.5">${formatPrice(item.price)}</div>
+            <div class="text-[11px] text-white/60 mt-0.5">Color: ${item.colorName} &nbsp;•&nbsp; Size: ${item.size}</div>
+
+            <div class="flex items-center gap-3 mt-2.5">
+              <div class="inline-flex items-center border border-white/25 rounded px-2 py-0.5 text-xs font-mono-tech">
+                <button data-idx="${idx}" class="cart-qty-minus px-1.5 text-white/75 hover:text-white">−</button>
+                <span class="px-2 text-[11px]">${item.qty}</span>
+                <button data-idx="${idx}" class="cart-qty-plus px-1.5 text-white/75 hover:text-white">+</button>
+              </div>
+              <button data-idx="${idx}" class="cart-remove text-white/50 hover:text-white transition" title="Remove item">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      // Bind quantity & remove handlers
+      container.querySelectorAll('.cart-qty-minus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const i = parseInt(btn.dataset.idx, 10);
+          if (state.cart[i].qty > 1) {
+            state.cart[i].qty--;
+          } else {
+            state.cart.splice(i, 1);
+          }
+          renderCart();
+        });
+      });
+
+      container.querySelectorAll('.cart-qty-plus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const i = parseInt(btn.dataset.idx, 10);
+          state.cart[i].qty++;
+          renderCart();
+        });
+      });
+
+      container.querySelectorAll('.cart-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const i = parseInt(btn.dataset.idx, 10);
+          state.cart.splice(i, 1);
+          renderCart();
+        });
+      });
+    }
+
+    /********************************************************************
+     * 9. PROCEDURAL GOLDEN-HOUR SUNSET CLOUDS CANVAS
+     ********************************************************************/
+    function initSunsetCloudsCanvas() {
+      const canvas = document.getElementById('cloudCanvas');
+      const ctx = canvas.getContext('2d');
+
+      let w = (canvas.width = window.innerWidth);
+      let h = (canvas.height = window.innerHeight);
+
+      window.addEventListener('resize', () => {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      });
+
+      // Soft drifting volumetric cloud puffs
+      const puffs = Array.from({ length: 28 }, (_, i) => ({
+        x: Math.random() * w,
+        y: h * (0.36 + Math.random() * 0.62),
+        r: (w * 0.12) + Math.random() * (w * 0.18),
+        speed: 0.08 + Math.random() * 0.16,
+        hue: i % 2 === 0 ? 'rgba(248, 172, 126, 0.14)' : 'rgba(222, 134, 118, 0.12)'
+      }));
+
+      function drawClouds() {
+        ctx.clearRect(0, 0, w, h);
+        puffs.forEach(p => {
+          p.x += p.speed;
+          if (p.x - p.r > w) p.x = -p.r;
+
+          const grad = ctx.createRadialGradient(p.x, p.y, p.r * 0.1, p.x, p.y, p.r);
+          grad.addColorStop(0, p.hue);
+          grad.addColorStop(1, 'rgba(245, 165, 120, 0)');
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        requestAnimationFrame(drawClouds);
+      }
+      drawClouds();
+    }
+
+    /********************************************************************
+     * 10. EVENT LISTENERS (DRAG, WHEEL, KEYBOARD, BUTTONS, ACCORDIONS)
+     ********************************************************************/
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-3');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-3');
+      }, 2200);
+    }
+
+    function bindEvents() {
+      // Carousel Left / Right Buttons
+      document.getElementById('prevGarmentBtn').addEventListener('click', () => {
+        goToGarment(state.activeIndex - 1);
+      });
+      document.getElementById('nextGarmentBtn').addEventListener('click', () => {
+        goToGarment(state.activeIndex + 1);
+      });
+
+      // Brand Logo returns to main wire view
+      document.getElementById('brandLogoBtn').addEventListener('click', () => {
+        if (state.isQuickView) closeQuickView();
+      });
+
+      // Quick View Trigger & Close
+      document.getElementById('quickViewBtn').addEventListener('click', openQuickView);
+      document.getElementById('closeQuickViewBtn').addEventListener('click', closeQuickView);
+
+      // Quick View Left Gallery Slide Arrows & Dots
+      document.getElementById('qvMediaPrev').addEventListener('click', () => {
+        updateQvMediaSlide(state.qvSlideIndex - 1);
+      });
+      document.getElementById('qvMediaNext').addEventListener('click', () => {
+        updateQvMediaSlide(state.qvSlideIndex + 1);
+      });
+      document.querySelectorAll('.qv-dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+          updateQvMediaSlide(parseInt(dot.dataset.slide, 10));
+        });
+      });
+
+      // Size Selector Pill Buttons
+      document.querySelectorAll('.size-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.selectedSize = btn.dataset.size;
+        });
+      });
+
+      // Quantity Stepper inside Orange ADD TO BAG button
+      document.getElementById('qvQtyMinus').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (state.selectedQty > 1) {
+          state.selectedQty--;
+          document.getElementById('qvQtyValue').textContent = state.selectedQty;
+        }
+      });
+      document.getElementById('qvQtyPlus').addEventListener('click', (e) => {
+        e.stopPropagation();
+        state.selectedQty++;
+        document.getElementById('qvQtyValue').textContent = state.selectedQty;
+      });
+
+      // ADD TO BAG & BUY Buttons
+      document.getElementById('addToBagMainBtn').addEventListener('click', addCurrentProductToBag);
+      document.getElementById('instantBuyBtn').addEventListener('click', () => {
+        addCurrentProductToBag();
+      });
+
+      // Cart Drawer Open / Close
+      document.getElementById('bagTriggerBtn').addEventListener('click', openCartDrawer);
+      document.getElementById('closeCartBtn').addEventListener('click', closeCartDrawer);
+      document.getElementById('cartBackdrop').addEventListener('click', closeCartDrawer);
+
+      // Upsell "Add to Bag" inside Cart Drawer
+      document.getElementById('addUpsellBtn').addEventListener('click', () => {
+        const size = document.getElementById('upsellSizeSelect').value;
+        const existing = state.cart.find(item => item.productId === 'field-notes-black' && item.size === size);
+        if (existing) {
+          existing.qty++;
+        } else {
+          state.cart.push({
+            productId: 'field-notes-black',
+            title: 'Hail Hood',
+            colorName: 'Washed Black',
+            size,
+            price: 110.00,
+            qty: 1,
+            primaryColor: '#232225',
+            type: 'hoodie'
+          });
+        }
+        renderCart();
+        showToast('Hail Hood added to bag');
+      });
+
+      // Accordions inside Quick View Card
+      document.querySelectorAll('.accordion-trigger').forEach(trigger => {
+        trigger.addEventListener('click', () => {
+          const content = trigger.nextElementSibling;
+          const icon = trigger.querySelector('.acc-icon');
+          const isOpen = content.classList.contains('open');
+
+          document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
+          document.querySelectorAll('.acc-icon').forEach(i => (i.textContent = '+'));
+
+          if (!isOpen) {
+            content.classList.add('open');
+            icon.textContent = '−';
+          }
+        });
+      });
+
+      // Full Details link opens the first accordion smoothly
+      document.getElementById('fullDetailsScrollBtn').addEventListener('click', () => {
+        const firstAcc = document.querySelector('.accordion-trigger');
+        if (firstAcc) firstAcc.click();
+      });
+
+      // Left Navigation Menu Drawer
+      const menuDrawer = document.getElementById('menuDrawer');
+      const menuBackdrop = document.getElementById('menuBackdrop');
+      const closeMenu = () => {
+        menuDrawer.classList.add('-translate-x-full');
+        menuBackdrop.classList.add('pointer-events-none', 'opacity-0');
+      };
+      document.getElementById('menuBtn').addEventListener('click', () => {
+        menuDrawer.classList.remove('-translate-x-full');
+        menuBackdrop.classList.remove('pointer-events-none', 'opacity-0');
+      });
+      document.getElementById('closeMenuBtn').addEventListener('click', closeMenu);
+      menuBackdrop.addEventListener('click', closeMenu);
+
+      document.querySelectorAll('.menu-jump-link').forEach(link => {
+        link.addEventListener('click', () => {
+          const idx = parseInt(link.dataset.jump || '4', 10);
+          closeMenu();
+          if (state.isQuickView) closeQuickView();
+          goToGarment(idx);
+        });
+      });
+
+      // Currency toggle (EUR € <-> USD $)
+      document.getElementById('currencyBtn').addEventListener('click', () => {
+        state.currency = state.currency === 'EUR' ? 'USD' : 'EUR';
+        document.getElementById('currencyLabel').textContent = state.currency === 'EUR' ? 'EUR €' : 'USD $';
+        updateBottomCaption();
+        document.getElementById('qvPrice').textContent = formatPrice(PRODUCTS[state.activeIndex].price);
+        renderCart();
+      });
+
+      // Checkout Modal
+      const checkoutModal = document.getElementById('checkoutModal');
+      document.getElementById('checkoutBtn').addEventListener('click', () => {
+        closeCartDrawer();
+        checkoutModal.classList.remove('hidden');
+        checkoutModal.classList.add('flex');
+      });
+      document.getElementById('closeCheckoutModal').addEventListener('click', () => {
+        checkoutModal.classList.add('hidden');
+        checkoutModal.classList.remove('flex');
+      });
+      document.getElementById('confirmOrderBtn').addEventListener('click', () => {
+        checkoutModal.classList.add('hidden');
+        checkoutModal.classList.remove('flex');
+        state.cart = [];
+        renderCart();
+        showToast('Order confirmed! Dispatching from Amsterdam.');
+      });
+
+      // Drag / Swipe along the Clothesline Wire
+      const mainStage = document.getElementById('mainStage');
+      mainStage.addEventListener('pointerdown', (e) => {
+        if (state.isQuickView) return;
+        if (e.target.closest('button')) return;
+        state.isDragging = true;
+        state.dragStartX = e.clientX;
+        state.dragStartTarget = state.targetPos;
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (!state.isDragging || state.isQuickView) return;
+        const dx = e.clientX - state.dragStartX;
+        const deltaIndex = -dx / 220;
+        const rawTarget = Math.max(0, Math.min(PRODUCTS.length - 1, state.dragStartTarget + deltaIndex));
+        state.targetPos = rawTarget;
+      });
+
+      window.addEventListener('pointerup', () => {
+        if (!state.isDragging) return;
+        state.isDragging = false;
+        goToGarment(Math.round(state.targetPos));
+      });
+
+      // Horizontal Trackpad / Mouse Wheel support on the wire
+      let wheelCooldown = false;
+      window.addEventListener('wheel', (e) => {
+        if (state.isQuickView || wheelCooldown) return;
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        if (Math.abs(delta) > 22) {
+          wheelCooldown = true;
+          goToGarment(state.activeIndex + (delta > 0 ? 1 : -1));
+          setTimeout(() => { wheelCooldown = false; }, 380);
+        }
+      }, { passive: true });
+
+      // Keyboard Left / Right / Escape navigation
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeCartDrawer();
+          if (state.isQuickView) closeQuickView();
+        } else if (e.key === 'ArrowLeft') {
+          if (state.isQuickView) updateQvMediaSlide(state.qvSlideIndex - 1);
+          else goToGarment(state.activeIndex - 1);
+        } else if (e.key === 'ArrowRight') {
+          if (state.isQuickView) updateQvMediaSlide(state.qvSlideIndex + 1);
+          else goToGarment(state.activeIndex + 1);
+        }
+      });
+    }
+
+    /********************************************************************
+     * 11. INITIALIZE APPLICATION ON LOAD
+     ********************************************************************/
+    window.onload = function () {
+      initSunsetCloudsCanvas();
+      buildGarmentNodes();
+      renderCart();
+      bindEvents();
+      requestAnimationFrame(animateStage);
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --card-cream: #F6F2EC;
+    --accent-orange: #E85D2A;
+    --dark-ink: #181716;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    font-family: 'Montserrat', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #0A0908;
+    color: #ffffff;
+    letter-spacing: 0.01em;
+  }
+}
+
+.font-display {
+  font-family: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
+  letter-spacing: 0.04em;
+}
+
+.font-editorial {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.font-mono-tech {
+  font-family: 'Montserrat', 'Plus Jakarta Sans', sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+}
+
+/* Custom Scrollbar for Detail Panel, Modals & Cart */
+.custom-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(120, 110, 100, 0.35);
+  border-radius: 9999px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Solid/RGBA surfaces over active WebGL canvas (Zero backdrop-filter stall on WebGL) */
+.hud-surface-pill {
+  background: rgba(28, 22, 24, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  box-shadow: 0 8px 28px rgba(24, 10, 8, 0.28);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.hud-surface-pill:hover {
+  background: rgba(42, 32, 35, 0.9);
+  border-color: rgba(255, 255, 255, 0.75);
+  transform: translateY(-1px);
+}
+
+.hud-nav-arrow {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: rgba(28, 22, 24, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease, border-color 0.18s ease;
+  cursor: pointer;
+}
+
+.hud-nav-arrow:hover {
+  background: rgba(46, 35, 38, 0.92);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: scale(1.06);
+}
+
+.hud-nav-arrow:active {
+  transform: scale(0.95);
+}
+
+/* Product Detail Cream Panel (#F6F2EC) */
+.product-detail-card {
+  background: #F6F2EC;
+  color: #181716;
+  box-shadow: 0 28px 68px rgba(20, 10, 6, 0.38);
+}
+
+/* Dark Drawer Surface */
+.dark-drawer-surface {
+  background: rgba(22, 19, 18, 0.96);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.55);
+}
+
+/* Focus-visible accessibility ring */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #E85D2A;
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+ * LUXURY SCROLL-BASED ANIMATIONS & KINETIC REVEALS
+ * ============================================================================ */
+@keyframes goldShimmerSweep {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes floatSlow {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.gold-shimmer-text {
+  background-size: 220% auto;
+  animation: goldShimmerSweep 7s ease-in-out infinite;
+}
+
+/* Base Scroll Reveal States */
+.scroll-reveal-up {
+  opacity: 0;
+  transform: perspective(1000px) translateY(42px) rotateX(6deg) scale(0.985);
+  transition:
+    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal-left {
+  opacity: 0;
+  transform: perspective(1000px) translateX(-44px) rotateY(5deg) scale(0.985);
+  transition:
+    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal-right {
+  opacity: 0;
+  transform: perspective(1000px) translateX(44px) rotateY(-5deg) scale(0.985);
+  transition:
+    opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal-scale {
+  opacity: 0;
+  transform: perspective(1100px) translateY(32px) scale(0.92);
+  transition:
+    opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal-visible {
+  opacity: 1 !important;
+  transform: perspective(1000px) translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) scale(1) !important;
+}
+
+/* Gold Architectural Divider Line Draw */
+.scroll-gold-line {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scroll-gold-line-visible {
+  transform: scaleX(1);
+}
+
+/* Luxury Card 3D Hover Lift */
+.luxury-card-hover {
+  transition:
+    transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.28s ease;
+}
+
+.luxury-card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 22px 48px rgba(17, 17, 17, 0.11);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal-up,
+  .scroll-reveal-left,
+  .scroll-reveal-right,
+  .scroll-reveal-scale {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .scroll-gold-line {
+    transform: scaleX(1) !important;
+    transition: none !important;
+  }
+}
+
